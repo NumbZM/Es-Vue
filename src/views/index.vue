@@ -6,7 +6,7 @@
     background="#4fc08d"
     show-action
     placeholder="请输入搜索关键词"
-    @search="onSearch"
+    @input="onSearch"
     @cancel="onCancel"
     />
     <p class="searchTitle" v-if="searchList&&searchList.length>0">
@@ -14,40 +14,55 @@
     </p>
     <div class="searchList">
       <van-skeleton avatar :row="4" :loading="loadingSke" avatar-shape="square" v-for="item in 6" :key="item" />
-      <div class="searchListItem clearfix" v-for="item in searchList" :key="item.xgh">
-        <div class="searchListContainer">
-          <div :style="{backgroundImage:'url('+item.photo+')'}" class="searchListPhoto"/>
-        </div>
-        <div class="searchListBody">
-          <div class="searchListCell">
-            <span class="searchListCellTitle">学号</span>
-            <span class="searchListCellText">{{item.num}}</span>
+        <van-swipe-cell v-for="(item,idx) in searchList" :key="idx">
+          <div class="searchListItem clearfix">
+              <div class="searchListContainer">
+                <div :style="{backgroundImage:'url('+item.photo+')'}" class="searchListPhoto" @click="preview(item.photo)"/>
+              </div>
+              <div class="searchListBody">
+                <div class="searchListCell">
+                  <span class="searchListCellTitle">学号</span>
+                  <span class="searchListCellText">{{item.num}}</span>
+                </div>
+                <div class="searchListCell">
+                  <span class="searchListCellTitle">姓名</span>
+                  <span class="searchListCellText">{{item.xm}}</span>
+                </div>
+                <div class="searchListCell">
+                  <span class="searchListCellTitle">电话</span>
+                  <span class="searchListCellText">{{item.phone}}</span>
+                </div>
+                <div class="searchListCell">
+                  <span class="searchListCellTitle">电子邮箱</span>
+                  <span class="searchListCellText">{{item.email}}</span>
+                </div>
+              </div>
           </div>
-          <div class="searchListCell">
-            <span class="searchListCellTitle">姓名</span>
-            <span class="searchListCellText">{{item.xm}}</span>
-          </div>
-          <div class="searchListCell">
-            <span class="searchListCellTitle">电话</span>
-            <span class="searchListCellText">{{item.phone}}</span>
-          </div>
-          <div class="searchListCell">
-            <span class="searchListCellTitle">电子邮箱</span>
-            <span class="searchListCellText">{{item.email}}</span>
-          </div>
-        </div>
-      </div>
+          <template #right>
+            <div class="searchListBtnContainer">
+              <div class="searchListDeleteBtn" @click="itemDelete(item.id)">
+              删除
+              </div>
+              <div class="searchListChangeBtn" @click="itemChange(item.id)">
+                修改
+              </div>
+            </div>
+            
+          </template>
+        </van-swipe-cell>
     </div>
     <van-button type="primary" class="addBtn" round block @click="add">+ 新增</van-button>
   </div>
 </template>
 <script>
-import { Search,Skeleton,Button } from 'vant';
+import { Search,Skeleton,Button,SwipeCell,Toast,ImagePreview } from 'vant';
 export default {
   components:{
     'van-search':Search,
     'van-skeleton':Skeleton,
-    'van-button':Button
+    'van-button':Button,
+    'van-swipe-cell':SwipeCell,
+    [ImagePreview.Component.name]: ImagePreview.Component,
   },
   data () {
     return {
@@ -56,9 +71,16 @@ export default {
       loadingSke:false,
     }
   },
-  async created(){
+  created(){
+    this.getList()
   },
   methods:{
+    async getList(){
+      const res = await this.$api.list.esList()
+      if(res){
+        this.searchList=res.data.data.content
+      }
+    },
     async onSearch(){
         this.loadingSke=true
         const res = await this.$api.query.esQuery({param:this.value})
@@ -68,10 +90,23 @@ export default {
         }
     },
     onCancel(){
-        console.log('onCancel')
+        this.getList();
     },
     add(){
         this.$router.push('/add')
+    },
+    async itemDelete(id){
+      const res = await this.$api.deleteData.esDelete({id:id})
+      if(res){
+        Toast.success(res.data.msg)
+        this.getList();
+      }
+    },
+    itemChange(id){
+      this.$router.push({path:'/add',query:{id:id}})
+    },
+    preview(photo){
+      ImagePreview([photo])
     }
   }
 }
@@ -171,19 +206,44 @@ export default {
     width: 80%;
     margin: 10px auto 0;
 }
+.searchListDeleteBtn{
+  width: 60px;
+  height: 100%;
+  background-color: #ee0a24;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.searchListChangeBtn{
+  width: 60px;
+  height: 100%;
+  background-color: rgb(79, 192, 141);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.searchListBtnContainer{
+  display: flex;
+  justify-content: center;
+  height: 100%;
+}
 </style>
 <style>
 .van-skeleton:first-child{
-  margin-top: 53px;
 }
 .van-skeleton{
-  margin-top: 20px;
   padding: 20px!important;
   background-color: #F7F8FA;
+  margin-bottom: 20px;
 }
 .van-skeleton__avatar{
-  width: 100px!important;
-  height: 139px!important;
+  width: 125px!important;
+  height: 130px!important;
   margin-right: 20px!important;
+}
+.van-skeleton__row:not(:first-child){
+  margin-top: 15px;
 }
 </style>

@@ -1,6 +1,6 @@
 <template>
     <div class="add">
-        <van-nav-bar :title="name?name:'新增人员信息'" @click-left="goBack" fixed>
+        <van-nav-bar :title="$route.query.id?'修改人员信息':'新增人员信息'" @click-left="goBack" fixed>
             <template #left>
                 <van-icon name="arrow-left" size="18" color="#29292A"/>
             </template>
@@ -39,7 +39,7 @@
             />
             <van-field name="orphan" label="照片" :rules="[{ required: true, message: '请上传照片' }]" class="vanFieldLast">
               <template #input>
-                <van-uploader v-model="form.photo" multiple :before-delete="uploadFileRemove" :after-read="fileSuccess" :max-count="1"/>
+                <van-uploader v-model="form.photo" :after-read="fileSuccess" :max-count="1"/>
               </template>
             </van-field>
             <div style="margin: 16px;">
@@ -70,21 +70,29 @@ export default {
         };
     },
   async created() {
+    if(this.$route.query.id){
+      const res = await this.$api.query.esGetEmployee({id:this.$route.query.id})
+      if(res){
+        this.form=res.data.data;
+        this.form.photo=[{"content":res.data.data.photo}]
+      }
+    }
   },
   methods: {
     async onSubmit() {
-        this.form.photo=this.form.photo[0].content
-        const res = await this.$api.add.esAdd(this.form)
+        const param ={}
+        param.xm=this.form.xm
+        param.num=this.form.num
+        param.phone=this.form.phone
+        param.email=this.form.email
+        param.photo=this.form.photo[0].content
+        param.id=this.form.id
+        const res = await this.$api.add.esAdd(param)
         if(res){
             this.$router.push('/index')
         }
     },
-    async uploadFileRemove(file,detail) {
-      console.log(file, 888);
-      console.log(detail, 999);
-    },
     async fileSuccess(file) {
-      console.log(file)
       this.form.photo=[{"content":file.content}]
     },
     goBack() {
