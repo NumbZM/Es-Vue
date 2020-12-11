@@ -72,7 +72,6 @@ instance.interceptors.response.use(
     // 请求成功
     res => {
         if(res.status === 200){
-            console.log(res.data.code)
             switch(res.data.code){
                 case 0:{
                     Toast.fail('登录失败');
@@ -119,10 +118,8 @@ instance.interceptors.response.use(
     },    
     // 请求失败
     error => {
-        console.log(error,1)
         const { response } = error;
         if (response) {
-            console.log(response,999)
             // 请求已发出，但是不在2xx的范围 
             errorHandle(response.status, response.statusText);
             return Promise.reject(response);
